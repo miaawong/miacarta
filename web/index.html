@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Miacarta</title>
+  <style>
+    :root {
+      --bg: #FAF7F2;
+      --surface: #FFFFFF;
+      --border: #E5DFD3;
+      --text: #1F1B16;
+      --text-muted: #6B645A;
+      --text-subtle: #9B948A;
+      --accent: #2D5F3F;
+      --accent-muted: #E6EFE9;
+      --danger: #B84A3F;
+      --success: #3F8B5F;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body,
+    html {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, "SF Pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 64px 12px;
+      line-height: 1.5;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      max-width: 640px;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    }
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      font-size: 13px;
+      color: var(--accent);
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      font-size: 30px;
+      margin: 0 0 12px 0;
+      letter-spacing: -0.3px;
+    }
+
+    p {
+      color: var(--text-muted);
+      margin: 0 0 20px 0;
+      font-size: 17px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      margin-top: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 16px;
+      color: var(--text);
+      background: var(--bg);
+      font-family: inherit;
+    }
+
+    input:focus {
+      outline: 2px solid var(--accent);
+      outline-offset: -1px;
+      border-color: transparent;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 14px 16px;
+      margin-top: 24px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .msg {
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-top: 16px;
+    }
+
+    .msg.error {
+      background: #FBEAE7;
+      color: var(--danger);
+    }
+
+    .msg.success {
+      background: var(--accent-muted);
+      color: var(--success);
+    }
+
+    .hint {
+      font-size: 13px;
+      color: var(--text-subtle);
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <div class="brand">Miacarta</div>
+
+    <div id="loading">
+      <h1>One moment…</h1>
+      <p>Checking your link.</p>
+    </div>
+
+    <div id="reset" class="hidden">
+      <h1>Set a new password</h1>
+      <p>Enter a new password to finish resetting your account.</p>
+      <label for="pw">New password</label>
+      <input id="pw" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+      <label for="pw2">Confirm password</label>
+      <input id="pw2" type="password" autocomplete="new-password">
+      <button id="submit">Update password</button>
+      <div id="reset-msg" class="hidden"></div>
+    </div>
+
+    <div id="confirmed" class="hidden">
+      <h1>Email verified</h1>
+      <p>Your email is confirmed and linked to your Miacarta account. Return to the app to keep going.</p>
+      <div class="hint">You can close this tab.</div>
+    </div>
+
+    <div id="done" class="hidden">
+      <h1>Password updated</h1>
+      <p>Your new password is set. Return to Miacarta and sign in.</p>
+      <div class="hint">You can close this tab.</div>
+    </div>
+
+    <div id="error" class="hidden">
+      <h1 id="error-title">Something went wrong</h1>
+      <p id="error-body">This link is no longer valid. Try requesting a new one from the app.</p>
+      <div class="hint">You can close this tab.</div>
+    </div>
+
+    <div id="already-linked" class="hidden">
+      <h1>That Google account is already in use</h1>
+      <p>The Google account you picked is already linked to a different Miacarta account.</p>
+      <p>Return to the app, tap <strong>"I already have an account · Sign in"</strong>, and use <strong>Continue with Google</strong> from the sign-in screen instead. That signs you into the existing account.</p>
+      <div class="hint">You can close this tab.</div>
+    </div>
+
+    <div id="oauth-return" class="hidden">
+      <h1>You're all set</h1>
+      <p>Google sign-in completed. Return to the Miacarta app and it will pick up your account on the next screen refresh.</p>
+      <button id="open-app">Open Miacarta</button>
+      <div class="hint">If the button says the address is invalid, that's expected while testing in Expo Go — just switch back to the app manually and pull to refresh.</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const SUPABASE_URL = 'https://jwptckzighooftpdyobe.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3cHRja3ppZ2hvb2Z0cGR5b2JlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0ODc4NzUsImV4cCI6MjA5ODA2Mzg3NX0.vNWe2v9_3wF9w1Pw9hC4E_5eoPKDmNfLfqq9zE3eBU4';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { detectSessionInUrl: true, persistSession: false, autoRefreshToken: false },
+    });
+
+    const $ = (id) => document.getElementById(id);
+    const show = (id) => { ['loading', 'reset', 'confirmed', 'done', 'error', 'oauth-return', 'already-linked'].forEach(k => $(k).classList.add('hidden')); $(id).classList.remove('hidden'); };
+    const setMsg = (id, cls, text) => { const el = $(id); el.className = 'msg ' + cls; el.textContent = text; };
+
+    function readParams() {
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const query = new URLSearchParams(window.location.search);
+      const type = hash.get('type') || query.get('type') || '';
+      const errorDescription = hash.get('error_description') || query.get('error_description');
+      const provider = hash.get('provider_token') || hash.get('provider_refresh_token') ? 'oauth' : null;
+      const hasCode = query.get('code') !== null;
+      return { type, errorDescription, provider, hasCode };
+    }
+
+    (async () => {
+      const { type, errorDescription, provider, hasCode } = readParams();
+
+      if (errorDescription) {
+        if (/already linked/i.test(errorDescription)) {
+          show('already-linked');
+        } else {
+          show('error');
+          $('error-body').textContent = errorDescription;
+        }
+        return;
+      }
+
+      // Give Supabase's detectSessionInUrl a tick to process the hash
+      await new Promise(r => setTimeout(r, 200));
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      // No session in browser can mean two things:
+      //   1. Genuinely expired/invalid link (rare — usually error_description is set)
+      //   2. linkIdentity succeeded server-side, so no tokens were sent to the browser
+      // Assume #2 and tell the user to return to the app. Worst case they retry.
+      if (!sessionData.session) {
+        show('oauth-return');
+        return;
+      }
+
+      if (type === 'recovery') {
+        show('reset');
+      } else if (provider || (!type && hasCode)) {
+        show('oauth-return');
+      } else {
+        show('confirmed');
+      }
+    })();
+
+    $('open-app').addEventListener('click', () => {
+      window.location.href = 'miacarta://auth-callback';
+    });
+
+    $('submit').addEventListener('click', async () => {
+      const pw = $('pw').value;
+      const pw2 = $('pw2').value;
+      if (pw.length < 6) { setMsg('reset-msg', 'error', 'Password must be at least 6 characters.'); $('reset-msg').classList.remove('hidden'); return; }
+      if (pw !== pw2) { setMsg('reset-msg', 'error', 'Passwords do not match.'); $('reset-msg').classList.remove('hidden'); return; }
+      $('submit').disabled = true;
+      $('submit').textContent = 'Updating…';
+      const { error } = await supabase.auth.updateUser({ password: pw });
+      if (error) {
+        setMsg('reset-msg', 'error', error.message);
+        $('reset-msg').classList.remove('hidden');
+        $('submit').disabled = false;
+        $('submit').textContent = 'Update password';
+        return;
+      }
+      show('done');
+    });
+  </script>
+</body>
+
+</html>

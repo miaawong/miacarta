@@ -1,56 +1,103 @@
-import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { useColorScheme } from '@/components/useColorScheme';
+import { colors, spacing, type } from '../constants/theme';
+import { ensureSignedIn } from '../lib/supabase';
 
-export {
-  // Catch any errors thrown by the Layout component.
-  ErrorBoundary,
-} from 'expo-router';
-
-export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
-};
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+export { ErrorBoundary } from 'expo-router';
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
-  useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
+    ensureSignedIn()
+      .then(() => setReady(true))
+      .catch((e) => setError(e.message ?? String(e)));
+  }, []);
 
-  if (!loaded) {
-    return null;
+  if (error) {
+    return (
+      <View style={styles.errWrap}>
+        <Text style={styles.errTitle}>Couldn't connect</Text>
+        <Text style={styles.errBody}>{error}</Text>
+        <Text style={styles.errHint}>
+          If this is your first run, double-check that anonymous sign-ins are enabled in your Supabase
+          project (Authentication → Providers → Anonymous → Enabled).
+        </Text>
+      </View>
+    );
   }
 
-  return <RootLayoutNav />;
-}
-
-function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  if (!ready) {
+    return (
+      <View style={styles.loadingWrap}>
+        <ActivityIndicator color={colors.accent} />
+      </View>
+    );
+  }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+    <SafeAreaProvider>
+      <StatusBar style="dark" />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="book/[id]"
+          options={{
+            headerShown: true,
+            headerTitle: '',
+            headerBackButtonDisplayMode: 'minimal',
+            headerStyle: { backgroundColor: colors.background },
+            headerShadowVisible: false,
+            headerTintColor: colors.text,
+          }}
+        />
+        <Stack.Screen
+          name="word/[id]"
+          options={{
+            headerShown: true,
+            headerTitle: '',
+            headerBackButtonDisplayMode: 'minimal',
+            headerStyle: { backgroundColor: colors.background },
+            headerShadowVisible: false,
+            headerTintColor: colors.text,
+          }}
+        />
+        <Stack.Screen
+          name="sign-in"
+          options={{
+            headerShown: true,
+            headerTitle: '',
+            headerBackButtonDisplayMode: 'minimal',
+            headerStyle: { backgroundColor: colors.background },
+            headerShadowVisible: false,
+            headerTintColor: colors.text,
+          }}
+        />
       </Stack>
-    </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  errWrap: {
+    flex: 1,
+    padding: spacing.xl,
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+    gap: spacing.md,
+  },
+  errTitle: { ...type.title, color: colors.text },
+  errBody: { ...type.body, color: colors.danger },
+  errHint: { ...type.small, color: colors.textMuted },
+  loadingWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+});

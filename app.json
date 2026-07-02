@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "vocab-cards",
+    "name": "Miacarta",
     "slug": "vocab-cards",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "vocabcards",
+    "scheme": "miacarta",
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
@@ -31,7 +31,7 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#2D5F3F"
         }
       ]
     ],
