@@ -12,7 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -26,6 +26,7 @@ import type { Book, DictionaryDefinition } from '../../types';
 
 export default function AddWordScreen() {
   const router = useRouter();
+  const { bookId: initialBookId } = useLocalSearchParams<{ bookId?: string }>();
   const [books, setBooks] = useState<Book[]>([]);
   const [word, setWord] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -49,7 +50,8 @@ export default function AddWordScreen() {
         .then(listBooks)
         .then(setBooks)
         .catch(() => {});
-    }, []),
+      if (initialBookId) setBookId(initialBookId);
+    }, [initialBookId]),
   );
 
   useEffect(() => {

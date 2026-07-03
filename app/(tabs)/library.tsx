@@ -10,6 +10,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { Button } from '../../components/Button';
 import { ensureSignedIn } from '../../lib/supabase';
-import { countWordsByBook, createBook, listBooks } from '../../lib/db';
+import { countWordsByBook, createBook, deleteBook, listBooks } from '../../lib/db';
 import { colors, radius, spacing, type } from '../../constants/theme';
 import type { Book } from '../../types';
 
@@ -69,6 +70,24 @@ export default function LibraryScreen() {
     }
   }
 
+  function handleDeleteBook(b: Book) {
+    Alert.alert(
+      `Delete "${b.title}"?`,
+      'Words tagged to this book will become untagged (not deleted).',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteBook(b.id);
+            await load();
+          },
+        },
+      ],
+    );
+  }
+
   const untaggedCount = counts['__untagged__'] ?? 0;
 
   return (
@@ -101,16 +120,32 @@ export default function LibraryScreen() {
           {books.map((b) => {
             const c = counts[b.id] ?? 0;
             return (
-              <Pressable key={b.id} onPress={() => router.push(`/book/${b.id}`)} style={styles.row}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.rowTitle}>{b.title}</Text>
-                  <Text style={styles.rowSub}>
-                    {b.author ? `${b.author} · ` : ''}
-                    {c} {c === 1 ? 'word' : 'words'}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color={colors.textSubtle} />
-              </Pressable>
+              <Swipeable
+                key={b.id}
+                containerStyle={styles.swipeContainer}
+                renderRightActions={() => (
+                  <Pressable
+                    onPress={() => handleDeleteBook(b)}
+                    style={styles.deleteAction}
+                  >
+                    <Ionicons name="trash-outline" size={22} color="#fff" />
+                    <Text style={styles.deleteLabel}>Delete</Text>
+                  </Pressable>
+                )}
+                overshootRight={false}
+                rightThreshold={40}
+              >
+                <Pressable onPress={() => router.push(`/book/${b.id}`)} style={styles.rowFlat}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowTitle}>{b.title}</Text>
+                    <Text style={styles.rowSub}>
+                      {b.author ? `${b.author} · ` : ''}
+                      {c} {c === 1 ? 'word' : 'words'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.textSubtle} />
+                </Pressable>
+              </Swipeable>
             );
           })}
 
@@ -121,6 +156,10 @@ export default function LibraryScreen() {
                 Add a book to start grouping the words you collect from it.
               </Text>
             </View>
+          ) : null}
+
+          {books.length > 0 ? (
+            <Text style={styles.hint}>Swipe a book to the left to delete it.</Text>
           ) : null}
         </ScrollView>
       )}
@@ -192,11 +231,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  rowFlat: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  swipeContainer: {
+    marginBottom: spacing.sm,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  deleteAction: {
+    backgroundColor: colors.danger,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+  },
+  deleteLabel: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 2,
+  },
   rowTitle: { ...type.bodyStrong, color: colors.text },
   rowSub: { ...type.small, color: colors.textMuted, marginTop: 2 },
   empty: { paddingTop: spacing.xxxl, paddingHorizontal: spacing.md },
   emptyTitle: { ...type.title, color: colors.text, marginBottom: spacing.sm },
   emptyBody: { ...type.body, color: colors.textMuted },
+  hint: { ...type.small, color: colors.textSubtle, textAlign: 'center', marginTop: spacing.md },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',

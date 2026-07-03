@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,13 @@ import {
   ActivityIndicator,
   Pressable,
   Alert,
+  TextInput,
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { ensureSignedIn } from '../../lib/supabase';
-import { deleteBook, deleteWord, listBooks, listWords } from '../../lib/db';
+import { deleteWord, listBooks, listWords } from '../../lib/db';
 import { colors, radius, spacing, type } from '../../constants/theme';
 import type { Book, Word } from '../../types';
 
@@ -24,6 +25,7 @@ export default function BookDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [book, setBook] = useState<Book | null>(null);
   const [words, setWords] = useState<Word[]>([]);
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -49,6 +51,17 @@ export default function BookDetailScreen() {
     }, [load]),
   );
 
+  const filteredWords = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return words;
+    return words.filter(
+      (w) =>
+        w.word.toLowerCase().includes(q) ||
+        w.definition.toLowerCase().includes(q) ||
+        (w.user_notes ?? '').toLowerCase().includes(q),
+    );
+  }, [words, search]);
+
   async function handleDeleteWord(w: Word) {
     Alert.alert('Delete word?', `Remove "${w.word}" and its review history?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -63,35 +76,22 @@ export default function BookDetailScreen() {
     ]);
   }
 
-  async function handleDeleteBook() {
-    if (!book) return;
-    Alert.alert(
-      'Delete book?',
-      'Words tagged to this book will become untagged (not deleted).',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            await deleteBook(book.id);
-            router.back();
-          },
-        },
-      ],
-    );
+  function handleAddWord() {
+    router.push({
+      pathname: '/add',
+      params: isUntagged ? {} : { bookId: id },
+    });
   }
 
   return (
     <>
       <Stack.Screen
         options={{
-          headerRight: () =>
-            isUntagged ? null : (
-              <Pressable onPress={handleDeleteBook} hitSlop={12} style={styles.headerBtn}>
-                <Ionicons name="trash-outline" size={22} color={colors.textMuted} />
-              </Pressable>
-            ),
+          headerRight: () => (
+            <Pressable onPress={handleAddWord} hitSlop={12} style={styles.headerBtn}>
+              <Ionicons name="add" size={26} color={colors.accent} />
+            </Pressable>
+          ),
         }}
       />
       <View style={styles.wrap}>
@@ -100,17 +100,35 @@ export default function BookDetailScreen() {
             <ActivityIndicator color={colors.accent} />
           </View>
         ) : (
-          <ScrollView contentContainerStyle={styles.scroll}>
+          <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
             <Text style={styles.title}>{isUntagged ? 'Untagged' : book?.title ?? 'Book not found'}</Text>
             {!isUntagged && book?.author ? <Text style={styles.author}>{book.author}</Text> : null}
             <Text style={styles.count}>
               {words.length} {words.length === 1 ? 'word' : 'words'}
             </Text>
 
+            {words.length > 0 ? (
+              <View style={styles.searchWrap}>
+                <Ionicons name="search" size={16} color={colors.textSubtle} />
+                <TextInput
+                  style={styles.searchInput}
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder="Search this book"
+                  placeholderTextColor={colors.textSubtle}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  clearButtonMode="while-editing"
+                />
+              </View>
+            ) : null}
+
             {words.length === 0 ? (
-              <Text style={styles.empty}>No words here yet.</Text>
+              <Text style={styles.empty}>No words here yet. Tap + to add one.</Text>
+            ) : filteredWords.length === 0 ? (
+              <Text style={styles.empty}>No matches for "{search.trim()}".</Text>
             ) : (
-              words.map((w) => (
+              filteredWords.map((w) => (
                 <Pressable
                   key={w.id}
                   onPress={() => router.push(`/word/${w.id}`)}
@@ -133,7 +151,7 @@ export default function BookDetailScreen() {
               ))
             )}
 
-            {words.length > 0 ? (
+            {filteredWords.length > 0 && !search.trim() ? (
               <Text style={styles.hint}>Tap a word to edit. Long-press to delete.</Text>
             ) : null}
           </ScrollView>
@@ -150,7 +168,23 @@ const styles = StyleSheet.create({
   title: { ...type.display, color: colors.text },
   author: { ...type.body, color: colors.textMuted, marginTop: spacing.xs, fontStyle: 'italic' },
   count: { ...type.small, color: colors.textSubtle, marginTop: spacing.sm, marginBottom: spacing.lg },
-  empty: { ...type.body, color: colors.textMuted, marginTop: spacing.xl },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    ...type.body,
+    color: colors.text,
+    padding: 0,
+  },
+  empty: { ...type.body, color: colors.textMuted, marginTop: spacing.xl, textAlign: 'center' },
   wordRow: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
